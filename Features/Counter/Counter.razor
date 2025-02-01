@@ -1,4 +1,6 @@
-﻿@page "/counter"
+﻿@inject MediatR.IMediator Mediator;
+
+@page "/counter"
 @rendermode InteractiveServer
 
 <PageTitle>Counter</PageTitle>
@@ -10,11 +12,15 @@
 <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
 
 @code {
-    private int currentCount = 0;
-
-    private void IncrementCount()
+    private int currentCount;
+    protected override async Task OnInitializedAsync()
     {
-        currentCount++;
+        currentCount = await Mediator.Send(new Queries.GetCount());
+    }
+
+    private async Task IncrementCount()
+    {
+        currentCount = await Mediator.Send(new Commands.IncrementCounter());
     }
 
 }

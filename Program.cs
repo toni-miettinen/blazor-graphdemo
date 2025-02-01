@@ -10,6 +10,7 @@ builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo("
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Program>());
 builder.Services.AddControllers();
 VerticalSlice.Features.Weather.ServiceSetup.RegisterServices(builder.Services);
+VerticalSlice.Features.Counter.ServiceSetup.RegisterServices(builder.Services);
 
 var app = builder.Build();
 
