@@ -10,6 +10,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo("/tmp/asp.net"));
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Program>());
 builder.Services.AddControllers();
+builder.Services.AddHealthChecks().AddCheck<AppHealthCheck>("App");
 ServiceTools.RegisterAllServices<Program>(builder.Services);    // register services on all features that implement IServiceSetup
 
 var app = builder.Build();
@@ -31,5 +32,6 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 app.MapControllers();
+app.MapHealthChecks("/api/healthz");
 
 app.Run();
