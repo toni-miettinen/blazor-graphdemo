@@ -1,0 +1,6 @@
+﻿services:
+  verticalslice:
+    image: verticalslice
+    build:
+      context: .
+      dockerfile: Dockerfile
