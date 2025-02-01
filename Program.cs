@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.DataProtection;
 using VerticalSlice.Components;
+using VerticalSlice;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,8 +10,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo("/tmp/asp.net"));
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Program>());
 builder.Services.AddControllers();
-VerticalSlice.Features.Weather.ServiceSetup.RegisterServices(builder.Services);
-VerticalSlice.Features.Counter.ServiceSetup.RegisterServices(builder.Services);
+ServiceTools.RegisterAllServices<Program>(builder.Services);    // register services on all features that implement IServiceSetup
 
 var app = builder.Build();
 

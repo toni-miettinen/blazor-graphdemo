@@ -1,12 +1,19 @@
+using MediatR;
 using VerticalSlice.Features.Weather.Domain;
 
 namespace VerticalSlice.Features.Weather;
 
-public class Repository
+public interface IRepository
+{
+    Task<IEnumerable<WeatherForecast>> Get();
+    Task Add(WeatherForecast forecast);
+}
+
+public class MockRepository : IRepository
 {
     private readonly List<WeatherForecast> _forecasts;
 
-    public Repository()
+    public MockRepository()
     {
         var startDate = DateOnly.FromDateTime(DateTime.Now);
         var summaries = new[] { "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching" };
@@ -17,7 +24,12 @@ public class Repository
             Summary = summaries[Random.Shared.Next(summaries.Length)]
         }).ToList();
     }
-    
-    public void Add(WeatherForecast forecast) => _forecasts.Add(forecast);
-    public IEnumerable<WeatherForecast> Get() => _forecasts;
+
+    public Task Add(WeatherForecast forecast)
+    {
+        _forecasts.Add(forecast);
+        return Task.CompletedTask;
+    }
+
+    public Task<IEnumerable<WeatherForecast>> Get() => Task.FromResult<IEnumerable<WeatherForecast>>(_forecasts);
 }

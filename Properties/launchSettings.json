@@ -5,7 +5,7 @@
         "commandName": "Project",
         "dotnetRunMessages": true,
         "launchBrowser": true,
-        "applicationUrl": "http://localhost:5087",
+        "applicationUrl": "http://localhost:8080",
         "environmentVariables": {
           "ASPNETCORE_ENVIRONMENT": "Development"
         }
@@ -14,9 +14,20 @@
         "commandName": "Project",
         "dotnetRunMessages": true,
         "launchBrowser": true,
-        "applicationUrl": "https://localhost:7203;http://localhost:5087",
+        "applicationUrl": "https://localhost:8081;http://localhost:8080",
         "environmentVariables": {
           "ASPNETCORE_ENVIRONMENT": "Development"
+        }
+      },
+      "https-prod": {
+        "commandName": "Project",
+        "dotnetRunMessages": true,
+        "launchBrowser": false,
+        "applicationUrl": "https://localhost:8081;http://localhost:8080",
+        "environmentVariables": {
+          "ASPNETCORE_ENVIRONMENT": "Production",
+          "ASPNETCORE_Kestrel__Certificates__Default__Password": "docker_cert_password",
+          "ASPNETCORE_Kestrel__Certificates__Default__Path": "aspnetapp.pfx"
         }
       }
     }

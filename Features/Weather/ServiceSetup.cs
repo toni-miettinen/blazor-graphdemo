@@ -1,9 +1,9 @@
 namespace VerticalSlice.Features.Weather;
 
-public static class ServiceSetup
+public class ServiceSetup : IServiceSetup
 {
-    public static void RegisterServices(IServiceCollection services)
+    public void RegisterServices(IServiceCollection services)
     {
-        services.AddSingleton<Repository>();
+        services.AddSingleton<IRepository, MockRepository>();
     }
 }

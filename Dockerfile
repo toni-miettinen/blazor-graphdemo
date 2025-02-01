@@ -4,7 +4,11 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS certs
+RUN dotnet dev-certs https -ep aspnetapp.pfx -p docker_cert_password
+RUN dotnet dev-certs https --trust
+
+FROM certs AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["VerticalSlice.csproj", "./"]
@@ -20,4 +24,4 @@ RUN dotnet publish "VerticalSlice.csproj" -c $BUILD_CONFIGURATION -o /app/publis
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "VerticalSlice.dll"]
+ENTRYPOINT ["dotnet", "VerticalSlice.dll", "--launch-profile https-prod"]

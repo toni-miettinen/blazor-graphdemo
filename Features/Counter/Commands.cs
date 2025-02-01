@@ -6,12 +6,12 @@ public static class Commands
 {
     public class IncrementCounter : IRequest<int>;
 
-    public class IncrementCounterHandler(Repository repo) : IRequestHandler<IncrementCounter, int>
+    public class IncrementCounterHandler(IRepository repo) : IRequestHandler<IncrementCounter, int>
     {
-        public Task<int> Handle(IncrementCounter request, CancellationToken cancellationToken)
+        public async Task<int> Handle(IncrementCounter request, CancellationToken cancellationToken)
         {
-            repo.Increment();
-            return Task.FromResult(repo.GetCount());
+            await repo.Increment();
+            return await repo.GetCount();
         }
     }
 }
