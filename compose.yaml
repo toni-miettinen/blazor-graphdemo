@@ -6,3 +6,9 @@
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      Redis__ConnectionString: "redis:6379"
+  redis:
+    expose:
+      - 6379
+    image: redis:latest

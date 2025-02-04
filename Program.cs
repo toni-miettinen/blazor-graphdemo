@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.DataProtection;
+using Newtonsoft.Json;
 using VerticalSlice.Components;
 using VerticalSlice;
+using VerticalSlice.Infra;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,7 +14,7 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<Pr
 builder.Services.AddControllers();
 builder.Services.AddHealthChecks().AddCheck<AppHealthCheck>("App");
 ServiceTools.RegisterAllServices<Program>(builder.Services);    // register services on all features that implement IServiceSetup
-
+builder.Services.Configure<RedisConnection.Config>(builder.Configuration.GetSection("Redis"));
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
