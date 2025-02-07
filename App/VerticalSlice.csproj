@@ -12,5 +12,12 @@
       <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.1" />
       <PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.3" />
       <PackageReference Include="StackExchange.Redis" Version="2.8.24" />
+      <PackageReference Include="Z.Blazor.Diagrams" Version="3.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Tests\obj\project.assets.json" />
+      <_ContentIncludedByDefault Remove="Tests\obj\project.packagespec.json" />
+      <_ContentIncludedByDefault Remove="Tests\obj\Tests.csproj.nuget.dgspec.json" />
     </ItemGroup>
 </Project>

@@ -1,0 +1,144 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: verticalslice
+spec:
+  hard:
+    cpu: "4"
+    memory: 8Gi
+    pods: "16"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: verticalslice-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: verticalslice-redis
+  template:
+    metadata:
+      labels:
+        app: verticalslice-redis
+    spec:
+      nodeSelector:
+        app: verticalslice
+      containers:
+        - name: redis
+          image: redis:latest
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              cpu: 1m
+              memory: 50Mi
+            limits:
+              cpu: 30m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: verticalslice-redis
+spec:
+  ports:
+    - name: http
+      port: 6379
+      targetPort: 6379
+  selector:
+    app: verticalslice-redis
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: verticalslice-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: verticalslice-app
+  template:
+    metadata:
+      labels:
+        app: verticalslice-app
+    spec:
+      nodeSelector:
+        app: verticalslice
+      containers:
+        - name: verticalslice-app-container
+          imagePullPolicy: Always
+          image: sessioacr.azurecr.io/verticalslice/app
+          ports:
+            - containerPort: 8080
+          env:
+            - name: REDIS
+              value: "verticalslice-redis.default.svc.cluster.local"
+          resources:
+            requests:
+              cpu: 1m
+              memory: 128Mi
+            limits:
+              cpu: 30m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: verticalslice-app
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP
+  selector:
+    app: verticalslice-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: verticalslice-app-lb
+  #annotations:
+  #  service.beta.kubernetes.io/azure-load-balancer-ipv4: "74.242.204.198"
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    app: verticalslice-app
+  type: LoadBalancer
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: verticalslice-ingress
+spec:
+  ingressClassName: azure-application-gateway
+  rules:
+    - host: "app.verticalslice.minota.fi"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: verticalslice-app
+                port:
+                  number: 8080
+#    - host: "session-api.scalable.minota.fi"
+#      http:
+#        paths:
+#          - path: /
+#            pathType: Prefix
+#            backend:
+#              service:
+#                name: session-service
+#                port:
+#                  number: 8080

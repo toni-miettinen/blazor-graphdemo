@@ -1,0 +1,117 @@
+﻿@using Blazor.Diagrams
+@using Blazor.Diagrams.Core.Models
+@using Blazor.Diagrams.Core.PathGenerators
+@using Blazor.Diagrams.Core.Routers
+@using Blazor.Diagrams.Options
+@using VerticalSlice.Features.Graph.Domain
+@using Blazor.Diagrams.Components
+@using Blazor.Diagrams.Core.Anchors
+@using Blazor.Diagrams.Core.Layers
+@rendermode InteractiveServer
+
+@page "/graph"
+
+<PageTitle>Graph</PageTitle>
+
+<script src="_content/Blazor.Extensions.Canvas/blazor.extensions.canvas.js"></script>
+
+<h1>Graph example</h1>
+
+<div id="diagram-container" style="width: 100%; height: 512px; border: 1px solid black">
+    <CascadingValue Value="Diagram" IsFixed="true">
+        <DiagramCanvas></DiagramCanvas>
+    </CascadingValue>
+</div>
+
+<p>
+Shortest path from <span style="color:red">vertex</span>
+<select @onchange="FromChanged" id="pathFrom">
+    @foreach(var vertice in Graph.Vertices)
+    {
+        <option value="@vertice.Label">@vertice.Label</option>       
+    }
+</select>
+to <span style="color:orange">vertex</span>
+<select @onchange="ToChanged" id="pathTo">
+    @foreach(var vertice in Graph.Vertices)
+    {
+        <option value="@vertice.Label">@vertice.Label</option>
+    }
+</select>
+<button class="btn btn-primary" @onclick="CalculatePath">Calculate</button>
+</p>
+
+@code {
+    private Graph Graph;
+    private Vertex? PathFrom;
+    private Vertex? PathTo;
+
+    private BlazorDiagram Diagram = null!;
+
+    private void FromChanged(ChangeEventArgs ev)
+    {
+        PathFrom = Graph.GetVertex((string)ev.Value);
+    }
+    
+    private void ToChanged(ChangeEventArgs ev)
+    {
+        PathTo = Graph.GetVertex((string)ev.Value);
+    }
+    
+    protected override void OnInitialized()
+    {
+        var options = new BlazorDiagramOptions
+        {
+            AllowMultiSelection = true,
+            Zoom =
+            {
+                Enabled = true,
+                ScaleFactor = 0.5,
+
+            },
+            Links =
+            {
+                DefaultRouter = new NormalRouter(),
+                DefaultPathGenerator = new SmoothPathGenerator()
+            },
+        };
+        Diagram = new BlazorDiagram(options);
+        
+        Graph = new Graph();
+        Graph.AddVertex("v1");
+        Graph.AddVertex("v2");
+        Graph.AddVertex("v3");  // center
+        Graph.AddVertex("v4");
+        Graph.AddVertex("v5");
+
+        Graph.AddEdge("v1", "v2", "a", 1);
+        Graph.AddEdge("v2", "v5", "b", 2);
+        Graph.AddEdge("v5", "v4", "c", 3);
+        Graph.AddEdge("v4", "v3", "d", 4);
+        Graph.AddEdge("v3", "v5", "e", 5);
+
+        PathFrom = Graph.GetVertex("v1");
+        PathTo = Graph.GetVertex("v5");
+
+        Dictionary<string, NodeModel> nodeMap = new();
+        foreach (var vertex in Graph.Vertices)
+        {
+            nodeMap.Add(vertex.Label, Diagram.Nodes.Add(new NodeModel
+            {   
+                Title = vertex.Label,
+            }));
+        }
+
+        foreach (var edge in Graph.Edges)
+        {
+            var anchorFrom = new ShapeIntersectionAnchor(nodeMap[edge.From]);
+            var anchorTo = new ShapeIntersectionAnchor(nodeMap[edge.To]);
+            Diagram.Links.Add(new LinkModel(anchorFrom, anchorTo));
+        }
+    }
+
+    private void CalculatePath()
+    {
+        var path = new DijkstraAlgorithm(Graph, PathFrom.Label).CalculateShortestPath(PathTo.Label);
+    }
+}
