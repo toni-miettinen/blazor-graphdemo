@@ -95,16 +95,7 @@ public class UnitTest
 
         return filter.ToArray();
     }
- 
-    [Fact]
-    public void DijkstraSimple() 
-    {
-        var graph = SimpleGraph();
-        var algo = new DijkstraAlgorithm(graph, "v1");
-        var path = algo.CalculateShortestPath("v3");
-        path.ShouldNotBeNull();
-    }
-
+    
     private void OutputPath(Graph graph, Path path, int width, int height)
     {
         for (var y = 0; y < height; y++)
@@ -128,7 +119,7 @@ public class UnitTest
     }
     
     [Fact]
-    public void DijkstraBig() 
+    public void DijkstraAlgorithm_Vertices_Valid() 
     {
         var graph = BigGraph(50, 50);
         ApplyFilter(graph, BoxFilter(10,10,25,25));
@@ -137,5 +128,22 @@ public class UnitTest
         var path = algo.CalculateShortestPath("45.48");
         OutputPath(graph, path, 50, 50);
         path.Vertices.Last().Label.ShouldBe("45.48");
+    }
+
+    [Fact]
+    public void DijkstraAlgorigthm_Edges_Valid()
+    {
+        var graph = GraphGenerators.ChatGPT(1024, 25);
+        var first = graph.Vertices.First();
+        var last = graph.Vertices.Last();
+        var algo = new DijkstraAlgorithm(graph, first.Label);
+        var path = algo.CalculateShortestPath(last.Label);
+        path.ShouldNotBeNull();
+        var edges = path.Edges.ToList();
+        edges.ShouldNotBeEmpty();
+        edges.First().ContainsEnd(first.Label).ShouldBeTrue();
+        edges.Last().ContainsEnd(last.Label).ShouldBeTrue();
+        path.Vertices.Select(x => x.Label).ShouldBeUnique();
+        edges.Select(x => x.Label).ShouldBeUnique();
     }
 }

@@ -10,6 +10,15 @@ public record Vertex(string Label, int Cost = 1)
 public record Edge(string From, string To, string Label, int Cost = 1)
 {
     public string OtherEnd(string me) => From == me ? To : From;
+
+    public bool EndsAre(string v1, string v2)
+    {
+        if (From == v1 && To == v2) return true;
+        if (To == v1 && From == v2) return true;
+        return false;
+    }
+    
+    public bool ContainsEnd(string v) => From == v || To == v;
     
     public override string ToString() => $"Edge {Label}({Cost}): {From} -> {To}";
 }
@@ -41,11 +50,13 @@ public class Graph
         _edgesByVertex[e.To].Add(e);
     }
 
-    public Edge AddEdge(string from, string to, string label, int cost = 1)
+    public Edge AddEdge(string from, string to, string label, int cost = 1) =>
+        AddEdge(new Edge(from, to, label, cost));
+
+    public Edge AddEdge(Edge edge)
     {
-        var e = new Edge(from, to, label, cost);
-        UpdateEdgeMap(e);
-        return e;
+        UpdateEdgeMap(edge);
+        return edge;
     }
 
     public void IsolateVertex(string label)
@@ -54,17 +65,29 @@ public class Graph
     }
 }
 
-public class Path
+public class Path(Graph graph)
 {
-    private readonly List<Edge> _edges = new();
-    private readonly List<Vertex> _vertices = new();
-    public IEnumerable<Edge> Edges => _edges;
-    public int Length => _edges.Sum(x => x.Cost);
-    public int EdgeCount => _edges.Count;
-    public IEnumerable<Vertex> Vertices => _vertices;
-
-    public void Reverse() => _vertices.Reverse();
-   
-    public void AddEdge(Edge edge) => _edges.Add(edge);
+    private readonly IList<Vertex> _vertices = new List<Vertex>();
+    public IEnumerable<Vertex> Vertices => _vertices.Reverse();
+    public IEnumerable<Edge> Edges {
+        get
+        {
+            var edges = new List<Edge>();
+            var path = Vertices.ToList();
+            if (!path.Any()) return Enumerable.Empty<Edge>();
+            var prev = path.First();
+            foreach (var vertex in path.Skip(1))
+            {
+                var ve = graph.GetEdges(vertex.Label);
+                var e = ve
+                    .Where(x => x.EndsAre(vertex.Label, prev.Label))
+                    .MinBy(x => x.Cost) ?? throw new KeyNotFoundException($"could not find edge from {prev.Label} to {vertex.Label}");
+                edges.Add(e);
+                prev = vertex;
+            }
+            return edges;
+        }
+    }
+    
     public void AddVertex(Vertex vertex) => _vertices.Add(vertex);
 }

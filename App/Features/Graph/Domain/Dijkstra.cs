@@ -74,13 +74,12 @@ public class DijkstraAlgorithm
         }
 
         string? step = Target.Label;
-        var path = new Path();
+        var path = new Path(_graph);
         while (!string.IsNullOrEmpty(step))
         {
             path.AddVertex(_graph.GetVertex(step) ?? throw new KeyNotFoundException(step));
             Predecessors.TryGetValue(step, out step);
         }
-        path.Reverse();
         
         return path;
     }
