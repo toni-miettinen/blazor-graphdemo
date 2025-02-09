@@ -6,40 +6,6 @@ namespace Tests;
 
 public class UnitTest
 {
-    private Graph SimpleGraph()
-    {
-           
-        /*  0              1
-         *   v1----a1---v2
-         *              |
-         *     8 .v3.   b2
-         *      X    \  |
-         *    d4     5e |
-         * 6 v4---c3---v5 3
-         *   |
-         *   f3
-         *   |
-         *   v6
-         */         
-        var graph = new Graph();
-        graph.AddVertex("v1");
-        graph.AddVertex("v2");
-        graph.AddVertex("v3"); 
-        graph.AddVertex("v4");
-        graph.AddVertex("v5");
-        graph.AddVertex("v6");
-
-        graph.AddEdge("v1", "v2", "a", 1);
-        graph.AddEdge("v2", "v5", "b", 2);
-        graph.AddEdge("v5", "v4", "c", 3);
-        //graph.AddEdge("v4", "v3", "d", 4);
-        graph.AddEdge("v3", "v5", "e", 5);
-        graph.AddEdge("v4", "v6", "f", 3);
-
-        return graph;
-    }
-
-    
     /* square mesh
      * 0.0 -- 1.0 -- 2.0 -- 3.0 -- ...
      *  \      \      \      \

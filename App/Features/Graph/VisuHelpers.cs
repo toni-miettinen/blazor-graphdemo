@@ -11,7 +11,7 @@ public static class VisuHelpers
         if (level < 1 || level > 10)
             throw new ArgumentOutOfRangeException(nameof(level), "Level must be between 1 and 10");
 
-        int red = (level - 1) * 28;   // Gradually increase red from 0 to 255
+        int red = (level - 1) * 28; // Gradually increase red from 0 to 255
         int green = 255 - ((level - 1) * 28); // Gradually decrease green from 255 to 0
 
         return $"#{red:X2}{green:X2}00"; // Keep blue at 00
@@ -30,77 +30,116 @@ public static class VisuHelpers
         }
     }
 
-    public static void ForceDirectLayout(Diagram diagram, List<(string from, string to)> edges)
+    public class ForceDirectedLayout
     {
-        var nodes = diagram.Nodes.ToList();
-        double AttractionFactor = 0.1;
-        int Iterations = 100;
-        double RepulsionFactor = 1000;
-        Random _rand = new Random();
-        Dictionary<string, (double x, double y)> positions = new Dictionary<string, (double x, double y)>();
+        private const double RepulsionStrength = 5000;
+        private const double BaseAttractionStrength = 0.1; // Base before cost scaling
+        private const double DampingFactor = 0.85;
+        private const double MaxForce = 250;
+        private const double MinDistance = 50;
 
-        // Initialize positions randomly
-        foreach (var node in nodes)
+        private Dictionary<string, (double x, double y)> positions = new();
+        private Dictionary<string, (double dx, double dy)> velocities = new();
+
+        public void Initialize(IEnumerable<string> vertices, double width, double height)
         {
-            positions[node.Title!] = (_rand.NextDouble() * 500, _rand.NextDouble() * 500);
+            Random rand = new();
+            foreach (var label in vertices)
+            {
+                positions[label] = (rand.NextDouble() * width, rand.NextDouble() * height);
+                velocities[label] = (0, 0);
+            }
         }
 
-        for (int step = 0; step < Iterations; step++)
+        public void ApplyForces(IEnumerable<string> vertices, IEnumerable<Edge> edges, int iterations)
         {
-            Dictionary<string, (double x, double y)> forces = new Dictionary<string, (double x, double y)>();
-
-            // Apply repulsion (nodes push each other away)
-            foreach (var a in nodes)
+            for (int step = 0; step < iterations; step++)
             {
-                forces[a.Title!] = (0, 0);
-                foreach (var b in nodes)
+                Dictionary<string, (double fx, double fy)> forces = new();
+
+                foreach (var label in vertices)
+                    forces[label] = (0, 0);
+
+                // Repulsion (same as before)
+                foreach (var v1 in vertices)
                 {
-                    if (a.Id == b.Id) continue;
+                    foreach (var v2 in vertices)
+                    {
+                        if (v1 == v2) continue;
 
-                    (double ax, double ay) = positions[a.Title!];
-                    (double bx, double by) = positions[b.Title!];
-                    double dx = ax - bx;
-                    double dy = ay - by;
-                    double distance = Math.Max(Math.Sqrt(dx * dx + dy * dy), 1);
+                        var (x1, y1) = positions[v1];
+                        var (x2, y2) = positions[v2];
 
-                    double force = RepulsionFactor / (distance * distance);
-                    forces[a.Title!] = (forces[a.Title!].x + force * dx, forces[a.Title!].y + force * dy);
+                        double dx = x2 - x1;
+                        double dy = y2 - y1;
+                        double distanceSq = dx * dx + dy * dy + MinDistance;
+                        double distance = Math.Sqrt(distanceSq);
+
+                        double repulsion = RepulsionStrength / distanceSq;
+                        double fx = -repulsion * (dx / distance);
+                        double fy = -repulsion * (dy / distance);
+
+                        forces[v1] = (forces[v1].fx + fx, forces[v1].fy + fy);
+                    }
+                }
+
+                // Attraction (affected by cost)
+                foreach (var edge in edges)
+                {
+                    var (x1, y1) = positions[edge.From];
+                    var (x2, y2) = positions[edge.To];
+
+                    double dx = x2 - x1;
+                    double dy = y2 - y1;
+                    double distance = Math.Sqrt(dx * dx + dy * dy + MinDistance);
+
+                    // Attraction strength inversely proportional to cost
+                    double attraction = (BaseAttractionStrength * distance * distance) / Math.Max(1, edge.Cost);
+                    double fx = attraction * (dx / distance);
+                    double fy = attraction * (dy / distance);
+
+                    forces[edge.From] = (forces[edge.From].fx + fx, forces[edge.From].fy + fy);
+                    forces[edge.To] = (forces[edge.To].fx - fx, forces[edge.To].fy - fy);
+                }
+
+                // Apply forces and update positions
+                foreach (var label in vertices)
+                {
+                    var (fx, fy) = forces[label];
+                    fx = Math.Clamp(fx, -MaxForce, MaxForce);
+                    fy = Math.Clamp(fy, -MaxForce, MaxForce);
+
+                    var (vx, vy) = velocities[label];
+                    vx = (vx + fx) * DampingFactor;
+                    vy = (vy + fy) * DampingFactor;
+                    velocities[label] = (vx, vy);
+
+                    var (x, y) = positions[label];
+                    positions[label] = (x + vx, y + vy);
                 }
             }
-
-            // Apply attraction (edges pull nodes closer)
-            foreach (var edge in edges)
-            {
-                (double ax, double ay) = positions[edge.from];
-                (double bx, double by) = positions[edge.to];
-                double dx = bx - ax;
-                double dy = by - ay;
-                double distance = Math.Max(Math.Sqrt(dx * dx + dy * dy), 1);
-
-                double force = AttractionFactor * (distance * distance);
-                forces[edge.from] = (forces[edge.from].x + force * dx, forces[edge.from].y + force * dy);
-                forces[edge.to] = (forces[edge.to].x - force * dx, forces[edge.to].y - force * dy);
-            }
-
-            // Update positions
-            /*
-            foreach (var node in nodes)
-            {
-                positions[node.Title!] = (
-                    positions[node.Title!].x + forces[node.Title!].x * 0.1,
-                    positions[node.Title!].y + forces[node.Title!].y * 0.1
-                );
-            }
-            */
         }
 
-        // Apply final positions
-        foreach (var node in nodes)
+        public Dictionary<string, (double x, double y)> GetPositions() => positions;
+    }
+
+    public static void ForceDirect(Domain.Graph graph, Diagram diagram)
+    {
+        //if (diagram.Container is null) throw new ArgumentNullException(nameof(diagram.Container));
+        var width = 1024;
+        var height = 1024;
+        var layout = new ForceDirectedLayout();
+        var verticeNames = graph.Vertices.Select(x => x.Label).ToArray();
+        layout.Initialize(verticeNames, width, height);
+        layout.ApplyForces(verticeNames, graph.Edges, 100);
+        var positions = layout.GetPositions();
+        foreach (var pos in positions)
         {
-            var (x, y) = positions[node.Title];
-            node.SetPosition(x, y);
+            var node = diagram.Nodes.First(x => x.Title == pos.Key);
+            node.SetPosition(pos.Value.x, pos.Value.y);
         }
     }
+
 
     public static void CalculatePath(Vertex from, Vertex to, Domain.Graph graph, Diagram diagram)
     {
@@ -112,7 +151,8 @@ public static class VisuHelpers
                 lm.Width = 2;
                 lm.Refresh();
             }
-        } 
+        }
+
         foreach (var e in path.Edges)
         {
             var link = diagram.Links
@@ -121,6 +161,7 @@ public static class VisuHelpers
             {
                 lm.Width = 10.0;
             }
+
             link.Refresh();
         }
     }
